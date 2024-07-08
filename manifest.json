@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Easy Version Switcher for the Minecraft Wiki",
+    "version": "0.0.1",
+    "description": "Lets you pick a Minecraft Java Edition version and shows the latest corresponding version of any wiki page.",
+    "author": "Gavin Tryzbiak",
+    "permissions": [
+        "tabs",
+        "activeTab",
+        "storage"
+    ],
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["*://www.minecraft.wiki/w/*", "*://minecraft.wiki/w/*"],
+            "js": ["content.js"]
+        }
+    ]
+}
+  
