@@ -1,6 +1,11 @@
 import { fetchMinecraftVersions } from "./api/fetchMinecraftVersions.js";
 
 chrome.runtime.onInstalled.addListener(() => {
+
+    // Default to the latest
+    chrome.storage.local.set({ versions: null, versionsLastUpdated: new Date(0), fetchVersionsError: null, lastSelected: null });
+
+    console.log("DEBUG: Extension onInstalled! Refreshing versions list...")
     fetchMinecraftVersions();
 })
 
@@ -17,11 +22,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (TAB_URL.searchParams.has("oldid")) { console.log("Has oldid param. Returning."); return }
     if (/^\/w\/[^\/]*:([^\/]*\/)?/.test(TAB_URL.pathname)) { console.log("Has category. Returning."); return } // Test pathname for semicolons, indicating category. Don't run if there's a category (User:, Talk:, etc)
 
-    // Update the list of versions if this is the first time minecraft.wiki was visited today
-    const today = new Date().toISOString();
-    const { versionsLastUpdated } = chrome.storage.local.get(["versionsLastUpdated"]);
-
-    if (versionsLastUpdated !== today) {
+    // If the last version check failed or was over 12 hours old, get the list of versions again
+    const { versions, versionsLastUpdated } = chrome.storage.local.get(["versions", "versionsLastUpdated"]);
+    const HOURS_BETWEEN_FETCH = 12
+    const today = new Date().toISOString()
+    if ( versions === null || today - versionsLastUpdated > (1000 * 60 * 60 * HOURS_BETWEEN_FETCH)) {
+        console.log("DEBUG: versions is null or old! Refreshing versions list...")
         fetchMinecraftVersions();
     }
 
@@ -34,12 +40,8 @@ chrome.runtime.onMessage.addListener(data => {
     const { event } = data
 
     switch (event) {
-        case 'getMinecraftVersions':
-            console.log("Clicked!")
-            fetchMinecraftVersions();
-            chrome.storage.local.get("versionsLastUpdated", (result) => {
-                console.log("result:", result)
-            });
+        case 'go':
+            console.log("Clicked Go!");
             
     }
 });
