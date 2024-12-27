@@ -3,7 +3,7 @@ import { fetchMinecraftVersions } from "./api/fetchMinecraftVersions.js";
 chrome.runtime.onInstalled.addListener(() => {
 
     // Default to the latest
-    chrome.storage.local.set({ versions: null, versionsLastUpdated: new Date(0), fetchVersionsError: null, lastSelected: null });
+    chrome.storage.local.set({ versions: null, versionsLastUpdated: new Date(0), fetchVersionsError: null, selectedVersion: null });
 
     console.log("DEBUG: Extension onInstalled! Refreshing versions list...")
     fetchMinecraftVersions();
@@ -33,7 +33,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 
 
-    //chrome.tabs.sendMessage(tabId, { action: 'injectControls' });
+    chrome.tabs.sendMessage(tabId, { action: 'injectControls' });
 });
 
 chrome.runtime.onMessage.addListener(data => {
@@ -41,7 +41,8 @@ chrome.runtime.onMessage.addListener(data => {
 
     switch (event) {
         case 'go':
-            console.log("Clicked Go!");
+            console.log("Clicked Go! Found");
+            break;
             
     }
 });

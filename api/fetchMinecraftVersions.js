@@ -11,9 +11,9 @@ export const fetchMinecraftVersions = () => {
             var filteredVersions = data.versions.filter(entry => 
                 ['release', 'old_beta', 'old_alpha'].includes(entry.type)
             ).map(entry => ({
-                "version_id": entry.id,
+                "versionId": entry.id,
                 "releaseTime": entry.releaseTime,
-                "type": entry.type
+                "releaseType": entry.type
             }));
             const today = new Date().toISOString()
             console.log("DEBUG: fetchMinecraftVersions filteredVersions:", filteredVersions)

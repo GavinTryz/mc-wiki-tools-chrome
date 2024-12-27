@@ -2,7 +2,7 @@
 
 const injectControls = () => {
     const CONTROLS_HTML = `
-    <div class="msgbox msgbox-blue" style="max-width: 90%;">
+    <div class="msgbox msgbox-yellow" style="max-width: 90%;">
         <div style="width: 100%; text-align:left" >
             <div id="msgbox-text">
                 <div>
@@ -11,9 +11,7 @@ const injectControls = () => {
                         <option value="x" id="dropdownMCVersionPlaceholder">Failed to load version list!</option>
                     </select>
                     <button id="buttonGo" disabled>Go</button>
-                </div>
-                <div style="padding-top: 10px;">
-                    <p id="errorMessage" style="color: red;" disabled></p>
+                    <p id="errorMessage" style="color: red;" hidden>Error message</p>
                 </div>
             </div>
         </div>
@@ -29,40 +27,57 @@ const injectControls = () => {
     } else {
         console.log("Div 'content' not found");
     }
-}
 
-injectControls()
 
-// Elements
-let goButton = document.getElementById("buttonGo");
-let versionDropdown = document.getElementById("dropdownMCVersion");
-let errorMessage = document.getElementById("errorMessage")
+    // Elements
+    let goButton = document.getElementById("buttonGo");
+    let versionDropdown = document.getElementById("dropdownMCVersion");
+    let errorMessage = document.getElementById("errorMessage")
 
-goButton.onclick = () => {
-    chrome.runtime.sendMessage({ event: 'go' })
-}
-
-const setVersions = () => {
-    chrome.storage.local.get(["versions", "lastSelected", "fetchVersionsError"], (results) => {
-        const {versions, lastSelected, fetchVersionsError} = results
+    // Populate 
+    chrome.storage.local.get(["versions", "selectedVersion", "fetchVersionsError"], (results) => {
+        const {versions, selectedVersion, fetchVersionsError} = results
         console.log("DEBUG: versions:", versions)
-        console.log("DEBUG: lastSelected:", lastSelected)
+        console.log("DEBUG: selectedVersion:", selectedVersion)
         console.log("DEBUG: fetchVersionsError:", fetchVersionsError)
-    
     
         if (versions === null || versions === undefined) {
             errorMessage.innerText = "Encountered an error while trying to get the list of Minecraft versions: " + fetchVersionsError
-            errorMessage.disabled = false;
+            errorMessage.hidden = false;
             versionDropdown.disabled = true;
             goButton.disabled = true;
             return
         }
+
+        // Create option groups
+        let releaseOptGroup = document.createElement("optgroup");
+        releaseOptGroup.label = "Release";
+        versionDropdown.appendChild(releaseOptGroup);
+        let betaOptGroup = document.createElement("optgroup");
+        betaOptGroup.label = "Beta";
+        versionDropdown.appendChild(betaOptGroup);
+        let alphaOptGroup = document.createElement("optgroup");
+        alphaOptGroup.label = "Alpha";
+        versionDropdown.appendChild(alphaOptGroup);
     
         versions.forEach(version => {
             let optionElement = document.createElement("option");
-            optionElement.innerHTML = version.version_id;
-            optionElement.value = version.releaseTime;
-            versionDropdown.appendChild(optionElement);
+            optionElement.innerHTML = version.versionId;
+            optionElement.value = version.versionId;
+            switch (version.releaseType) {
+                case 'release':
+                    releaseOptGroup.appendChild(optionElement);
+                    break;
+                case 'old_beta':
+                    betaOptGroup.appendChild(optionElement);
+                    break;
+                case 'old_alpha':
+                    alphaOptGroup.appendChild(optionElement);
+                    break;
+                default:
+                    alphaOptGroup.appendChild(optionElement);
+                    break;
+            }
         })
     
         let placeholderElement = document.getElementById("dropdownMCVersionPlaceholder")
@@ -70,11 +85,25 @@ const setVersions = () => {
     
         versionDropdown.disabled = false;
         goButton.disabled = false;
-        errorMessage.disabled = true;
+        errorMessage.hidden = true;
 
     })
+
+    goButton.onclick = () => {
+        selection = versionDropdown.value
+        chrome.storage.local.set({ selectedVersion: selection });
+        chrome.runtime.sendMessage({ event: 'go' })
+    }
 }
 
-setVersions()
+chrome.runtime.onMessage.addListener(data => {
+    const { action } = data
 
-        
+    switch (action) {
+        case 'injectControls':
+            console.log("DEBUG: injecting controls...");
+            injectControls();
+            break;
+            
+    }
+});
